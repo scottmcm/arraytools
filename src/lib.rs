@@ -267,37 +267,44 @@ mod impls {
 
         )
     }
-    impl_for_size!(2 => i0 i1);
-    impl_for_size!(3 => i0 i1 i2);
-    impl_for_size!(4 => i0 i1 i2 i3);
-    impl_for_size!(5 => i0 i1 i2 i3 i4);
-    impl_for_size!(6 => i0 i1 i2 i3 i4 i5);
-    impl_for_size!(7 => i0 i1 i2 i3 i4 i5 i6);
-    impl_for_size!(8 => i0 i1 i2 i3 i4 i5 i6 i7);
-    impl_for_size!(9 => i0 i1 i2 i3 i4 i5 i6 i7 i8);
-    impl_for_size!(10 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9);
-    impl_for_size!(11 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10);
-    impl_for_size!(12 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11);
-    impl_for_size!(13 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12);
-    impl_for_size!(14 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13);
-    impl_for_size!(15 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14);
-    impl_for_size!(16 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15);
-    impl_for_size!(17 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16);
-    impl_for_size!(18 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17);
-    impl_for_size!(19 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18);
-    impl_for_size!(20 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19);
-    impl_for_size!(21 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20);
-    impl_for_size!(22 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21);
-    impl_for_size!(23 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22);
-    impl_for_size!(24 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23);
-    impl_for_size!(25 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24);
-    impl_for_size!(26 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25);
-    impl_for_size!(27 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26);
-    impl_for_size!(28 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26 i27);
-    impl_for_size!(29 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26 i27 i28);
-    impl_for_size!(30 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26 i27 i28 i29);
-    impl_for_size!(31 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26 i27 i28 i29 i30);
-    impl_for_size!(32 => i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 i15 i16 i17 i18 i19 i20 i21 i22 i23 i24 i25 i26 i27 i28 i29 i30 i31);}
+
+    // for i in 2..=32 {
+    //     print!("    impl_for_size!({} =>", i);
+    //     (0..i).for_each(|x| print!(" a{}", x));
+    //     println!(");");
+    // }
+    impl_for_size!(2 => a0 a1);
+    impl_for_size!(3 => a0 a1 a2);
+    impl_for_size!(4 => a0 a1 a2 a3);
+    impl_for_size!(5 => a0 a1 a2 a3 a4);
+    impl_for_size!(6 => a0 a1 a2 a3 a4 a5);
+    impl_for_size!(7 => a0 a1 a2 a3 a4 a5 a6);
+    impl_for_size!(8 => a0 a1 a2 a3 a4 a5 a6 a7);
+    impl_for_size!(9 => a0 a1 a2 a3 a4 a5 a6 a7 a8);
+    impl_for_size!(10 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9);
+    impl_for_size!(11 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10);
+    impl_for_size!(12 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11);
+    impl_for_size!(13 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12);
+    impl_for_size!(14 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13);
+    impl_for_size!(15 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14);
+    impl_for_size!(16 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15);
+    impl_for_size!(17 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16);
+    impl_for_size!(18 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17);
+    impl_for_size!(19 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18);
+    impl_for_size!(20 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19);
+    impl_for_size!(21 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20);
+    impl_for_size!(22 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21);
+    impl_for_size!(23 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22);
+    impl_for_size!(24 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23);
+    impl_for_size!(25 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24);
+    impl_for_size!(26 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25);
+    impl_for_size!(27 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26);
+    impl_for_size!(28 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27);
+    impl_for_size!(29 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28);
+    impl_for_size!(30 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29);
+    impl_for_size!(31 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30);
+    impl_for_size!(32 => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 a31);
+}
 
 #[cfg(test)]
 mod tests {
