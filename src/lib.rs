@@ -59,29 +59,29 @@ mod traits {
 
     pub trait ArrayMap<T, F> {
         type Output;
-        fn map(self, f: F) -> Self::Output;
+        fn map(array: Self, f: F) -> Self::Output;
     }
 
     pub trait ArrayAsRef {
         type Output;
-        fn as_ref(self) -> Self::Output;
+        fn as_ref(array: Self) -> Self::Output;
     }
 
     pub trait ArrayAsMut {
         type Output;
-        fn as_mut(self) -> Self::Output;
+        fn as_mut(array: Self) -> Self::Output;
     }
 
     pub trait ArrayPush<T> {
         type Output;
-        fn push_back(self, item: T) -> Self::Output;
-        fn push_front(self, item: T) -> Self::Output;
+        fn push_back(array: Self, item: T) -> Self::Output;
+        fn push_front(array: Self, item: T) -> Self::Output;
     }
 
     pub trait ArrayPop<T> {
         type Output;
-        fn pop_back(self) -> (Self::Output, T);
-        fn pop_front(self) -> (Self::Output, T);
+        fn pop_back(array: Self) -> (Self::Output, T);
+        fn pop_front(array: Self) -> (Self::Output, T);
     }
 }
 
@@ -101,31 +101,31 @@ mod impls {
     }
     impl<T, U, F> ArrayMap<U, F> for [T; 0] {
         type Output = [U; 0];
-        fn map(self, _f: F) -> Self::Output { [] }
+        fn map(_array: Self, _f: F) -> Self::Output { [] }
     }
     impl<'a, T> ArrayAsRef for &'a [T; 0]
     {
         type Output = [&'a T; 0];
-        fn as_ref(self) -> Self::Output { [] }
+        fn as_ref(_array: Self) -> Self::Output { [] }
     }
     impl<'a, T> ArrayAsMut for &'a mut [T; 0]
     {
         type Output = [&'a mut T; 0];
-        fn as_mut(self) -> Self::Output { [] }
+        fn as_mut(_array: Self) -> Self::Output { [] }
     }
     impl<T> ArrayPush<T> for [T; 0] {
         type Output = [T; 1];
-        fn push_back(self, item: T) -> Self::Output { [item] }
-        fn push_front(self, item: T) -> Self::Output { [item] }
+        fn push_back(_array: Self, item: T) -> Self::Output { [item] }
+        fn push_front(_array: Self, item: T) -> Self::Output { [item] }
     }
     impl<T> ArrayPop<T> for [T; 1] {
         type Output = [T; 0];
-        fn pop_back(self) -> (Self::Output, T) {
-            let [item,] = self;
+        fn pop_back(array: Self) -> (Self::Output, T) {
+            let [item,] = array;
             ([], item)
         }
-        fn pop_front(self) -> (Self::Output, T) {
-            let [item,] = self;
+        fn pop_front(array: Self) -> (Self::Output, T) {
+            let [item,] = array;
             ([], item)
         }
     }
@@ -151,46 +151,46 @@ mod impls {
         where F: FnOnce(T)->U
     {
         type Output = [U; 1];
-        fn map(self, f: F) -> Self::Output {
-            let [a,] = self;
+        fn map(array: Self, f: F) -> Self::Output {
+            let [a,] = array;
             [f(a),]
         }
     }
     impl<'a, T> ArrayAsRef for &'a [T; 1]
     {
         type Output = [&'a T; 1];
-        fn as_ref(self) -> Self::Output {
-            let [a,] = self;
+        fn as_ref(array: Self) -> Self::Output {
+            let [a,] = array;
             [a,]
         }
     }
     impl<'a, T> ArrayAsMut for &'a mut [T; 1]
     {
         type Output = [&'a mut T; 1];
-        fn as_mut(self) -> Self::Output {
-            let [a,] = self;
+        fn as_mut(array: Self) -> Self::Output {
+            let [a,] = array;
             [a,]
         }
     }
     impl<T> ArrayPush<T> for [T; 1] {
         type Output = [T; 2];
-        fn push_back(self, item: T) -> Self::Output {
-            let [a,] = self;
+        fn push_back(array: Self, item: T) -> Self::Output {
+            let [a,] = array;
             [a, item]
         }
-        fn push_front(self, item: T) -> Self::Output {
-            let [a,] = self;
+        fn push_front(array: Self, item: T) -> Self::Output {
+            let [a,] = array;
             [item, a,]
         }
     }
     impl<T> ArrayPop<T> for [T; 2] {
         type Output = [T; 1];
-        fn pop_back(self) -> (Self::Output, T) {
-            let [a,item,] = self;
+        fn pop_back(array: Self) -> (Self::Output, T) {
+            let [a,item,] = array;
             ([a,], item)
         }
-        fn pop_front(self) -> (Self::Output, T) {
-            let [item,a,] = self;
+        fn pop_front(array: Self) -> (Self::Output, T) {
+            let [item,a,] = array;
             ([a,], item)
         }
     }
@@ -219,49 +219,49 @@ mod impls {
                 }
             }
             impl<T, U, F> ArrayMap<U, F> for [T; $n]
-                where F: FnMut(T)->U
+                where F: FnMut(T) -> U
             {
                 type Output = [U; $n];
-                fn map(self, mut f: F) -> Self::Output {
-                    let [$($i),*] = self;
+                fn map(array: Self, mut f: F) -> Self::Output {
+                    let [$($i),*] = array;
                     [$(f($i)),*]
                 }
             }
             impl<'a, T> ArrayAsRef for &'a [T; $n]
             {
                 type Output = [&'a T; $n];
-                fn as_ref(self) -> Self::Output {
-                    let [$($i),*] = self;
+                fn as_ref(array: Self) -> Self::Output {
+                    let [$($i),*] = array;
                     [$($i),*]
                 }
             }
             impl<'a, T> ArrayAsMut for &'a mut [T; $n]
             {
                 type Output = [&'a mut T; $n];
-                fn as_mut(self) -> Self::Output {
-                    let [$($i),*] = self;
+                fn as_mut(array: Self) -> Self::Output {
+                    let [$($i),*] = array;
                     [$($i),*]
                 }
             }
             impl<T> ArrayPush<T> for [T; $n] {
                 type Output = [T; $n+1];
-                fn push_back(self, item: T) -> Self::Output {
-                    let [$($i),*] = self;
+                fn push_back(array: Self, item: T) -> Self::Output {
+                    let [$($i),*] = array;
                     [$($i),*, item]
                 }
-                fn push_front(self, item: T) -> Self::Output {
-                    let [$($i),*] = self;
+                fn push_front(array: Self, item: T) -> Self::Output {
+                    let [$($i),*] = array;
                     [item, $($i),*]
                 }
             }
             impl<T> ArrayPop<T> for [T; $n+1] {
                 type Output = [T; $n];
-                fn pop_back(self) -> (Self::Output, T) {
-                    let [$($i),*, item] = self;
+                fn pop_back(array: Self) -> (Self::Output, T) {
+                    let [$($i),*, item] = array;
                     ([$($i),*], item)
                 }
-                fn pop_front(self) -> (Self::Output, T) {
-                    let [item, $($i),*] = self;
+                fn pop_front(array: Self) -> (Self::Output, T) {
+                    let [item, $($i),*] = array;
                     ([$($i),*], item)
                 }
             }
