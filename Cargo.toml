@@ -8,7 +8,7 @@ repository = "https://github.com/scottmcm/arraytools"
 documentation = "https://docs.rs/arraytools/"
 authors = ["scottmcm"]
 description = "An extension trait for working with arrays."
-keywords = ["array"]
+keywords = ["array", "no_std"]
 categories = ["no-std", "rust-patterns"]
 
 [dependencies]
