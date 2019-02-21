@@ -43,6 +43,12 @@ pub trait ArrayTools: Sized + Sealed {
         ArrayZip::zip(self, other)
     }
 
+    fn zip_with<T, F>(self, other: T, f: F) -> <Self as ArrayZipWith<T, F>>::Output
+        where Self: ArrayZipWith<T, F>
+    {
+        ArrayZipWith::zip_with(self, other, f)
+    }
+
     fn as_ref_array<'a>(&'a self) -> <&'a Self as ArrayAsRef>::Output
         where &'a Self: ArrayAsRef
     {
@@ -101,6 +107,11 @@ mod traits {
     pub trait ArrayZip<T> {
         type Output;
         fn zip(array: Self, other: T) -> Self::Output;
+    }
+
+    pub trait ArrayZipWith<T, F> {
+        type Output;
+        fn zip_with(array: Self, other: T, f: F) -> Self::Output;
     }
 
     pub trait ArrayAsRef {
@@ -194,6 +205,16 @@ mod impls {
                     let [$($i,)*] = array;
                     let [$($j,)*] = other;
                     [$(($i,$j),)*]
+                }
+            }
+            impl<T, U, V, F> ArrayZipWith<[U; $n], F> for [T; $n]
+                where F: $fn_trait(T, U) -> V
+            {
+                type Output = [V; $n];
+                fn zip_with(array: Self, other: [U; $n], mut f: F) -> Self::Output {
+                    let [$($i,)*] = array;
+                    let [$($j,)*] = other;
+                    [$(f($i,$j),)*]
                 }
             }
             impl<'a, T> ArrayAsRef for &'a [T; $n]
@@ -311,5 +332,8 @@ mod tests {
         assert_eq!(a[0].capacity(), 1);
         assert_eq!(a[1].capacity(), 1);
         assert_eq!(a[2].capacity(), 111);
+
+        let sums = [1, 2, 3].zip_with([30, 20, 10], std::ops::Add::add);
+        assert_eq!(sums, [31, 22, 13]);
     }
 }
