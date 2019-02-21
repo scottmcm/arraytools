@@ -19,6 +19,12 @@ pub trait ArrayTools: Sized + Sealed {
         ArrayGenerate::generate(f)
     }
 
+    fn indices() -> Self
+        where Self: ArrayIndices
+    {
+        ArrayIndices::indices()
+    }
+
     fn map<T, F>(self, f: F) -> <Self as ArrayMap<T, F>>::Output
         where Self: ArrayMap<T, F>
     {
@@ -71,6 +77,10 @@ mod traits {
 
     pub trait ArrayGenerate<F> {
         fn generate(f: F) -> Self;
+    }
+
+    pub trait ArrayIndices {
+        fn indices() -> Self;
     }
 
     pub trait ArrayMap<T, F> {
@@ -138,6 +148,12 @@ mod impls {
             {
                 fn generate(mut f: F) -> Self {
                     [$(replace_ident!($i => f()),)*]
+                }
+            }
+            impl ArrayIndices for [usize; $n] {
+                fn indices() -> Self {
+                    let mut i = 0;
+                    ArrayTools::generate(|| { let t = i; i += 1; t })
                 }
             }
             impl<T, U, F> ArrayMap<U, F> for [T; $n]
@@ -259,5 +275,8 @@ mod tests {
         assert_eq!(a2, [0, 2]);
         let b1 = a2.pop_back();
         assert_eq!(b1, ([0], 2));
+
+        let iota: [_; 10] = ArrayTools::indices();
+        assert_eq!(iota, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }
