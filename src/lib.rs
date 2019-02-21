@@ -19,6 +19,12 @@ pub trait ArrayTools: Sized + Sealed {
         ArrayGenerate::generate(f)
     }
 
+    fn repeat<T: Clone>(x: T) -> Self
+        where Self: ArrayRepeat<T>
+    {
+        ArrayRepeat::repeat(x)
+    }
+
     fn indices() -> Self
         where Self: ArrayIndices
     {
@@ -79,6 +85,10 @@ mod traits {
         fn generate(f: F) -> Self;
     }
 
+    pub trait ArrayRepeat<T> {
+        fn repeat(x: T) -> Self;
+    }
+
     pub trait ArrayIndices {
         fn indices() -> Self;
     }
@@ -123,6 +133,12 @@ mod impls {
     macro_rules! replace_ident {
         ($i:ident => $($j:tt)*) => ($($j)*)
     }
+
+    macro_rules! array_by_cloning {
+        ($x:ident:) => ( [] );
+        ($x:ident: $first:ident $($i:ident)*) => ( [$(replace_ident!($i => $x.clone()),)* $x] );
+    }
+
     macro_rules! impl_for_size {
         ($n:literal $fn_trait:ident => $($i:ident)* / $($j:ident)*) => (
 
@@ -148,6 +164,13 @@ mod impls {
             {
                 fn generate(mut f: F) -> Self {
                     [$(replace_ident!($i => f()),)*]
+                }
+            }
+            impl<T> ArrayRepeat<T> for [T; $n]
+                where T: Clone
+            {
+                fn repeat(x: T) -> Self {
+                    array_by_cloning!(x: $($i)*)
                 }
             }
             impl ArrayIndices for [usize; $n] {
@@ -278,5 +301,15 @@ mod tests {
 
         let iota: [_; 10] = ArrayTools::indices();
         assert_eq!(iota, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+        let mut v = Vec::with_capacity(111);
+        v.push(1);
+        let a: [_; 3] = ArrayTools::repeat(v);
+        assert_eq!(a[0], [1]);
+        assert_eq!(a[1], [1]);
+        assert_eq!(a[2], [1]);
+        assert_eq!(a[0].capacity(), 1);
+        assert_eq!(a[1].capacity(), 1);
+        assert_eq!(a[2].capacity(), 111);
     }
 }
