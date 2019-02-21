@@ -4,45 +4,176 @@
 use traits::*;
 
 pub trait ArrayTools: Sized + Sealed {
+    /// The type of the elements in this array
+    ///
+    /// ```rust
+    /// # type T = usize;
+    /// # const N: usize = 1;
+    /// use arraytools::ArrayTools;
+    ///
+    /// # fn _foo() where
+    /// [T; N]: ArrayTools<Element = T>
+    /// # {}
+    /// ```
     type Element;
+
+    /// The number of the elements in this array
+    ///
+    /// ```rust
+    /// # type T = usize;
+    /// # const N: usize = 1;
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!(<[T; N] as ArrayTools>::LEN, N);
+    /// ```
     const LEN: usize;
+
+    /// Extracts a slice containing the entire array.
+    ///
+    /// ```rust
+    /// # type T = usize;
+    /// # const N: usize = 1;
+    /// use arraytools::ArrayTools;
+    ///
+    /// let array: [i32; 5] = [1, 2, 3, 4, 5];
+    /// let slice: &[i32] = array.as_slice();
+    /// assert_eq!(slice.len(), 5);
+    /// ```
     fn as_slice(&self) -> &[Self::Element];
+
+    /// Extracts a mutable slice containing the entire array.
+    ///
+    /// ```rust
+    /// # type T = usize;
+    /// # const N: usize = 1;
+    /// use arraytools::ArrayTools;
+    ///
+    /// let mut array: [i32; 5] = [1, 2, 3, 4, 5];
+    /// let slice: &mut [i32] = array.as_mut_slice();
+    /// assert_eq!(slice.len(), 5);
+    /// ```
     fn as_mut_slice(&mut self) -> &mut [Self::Element];
 
+    /// The homogeneous tuple type equivalent to this array type.
+    ///
+    /// ```rust
+    /// # type T = usize;
+    /// use arraytools::ArrayTools;
+    ///
+    /// # fn _foo() where
+    /// [T; 4]: ArrayTools<Tuple = (T, T, T, T)>
+    /// # {}
+    /// ```
     type Tuple;
+
+    /// Converts a homogeneous tuple into the equivalent array.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!(<[_; 3]>::from_tuple((1, 2, 3)), [1, 2, 3]);
+    /// ```
     fn from_tuple(tuple: Self::Tuple) -> Self;
+
+    /// Converts this array into the equivalent homogeneous tuple.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 2, 3].into_tuple(), (1, 2, 3));
+    /// ```
     fn into_tuple(self) -> Self::Tuple;
 
+    /// Builds an array by calling the provided function.
+    ///
+    /// For `[T; N]`,
+    /// - when `N <= 1` this requires `F: FnOnce() -> T`
+    /// - when `N > 1` this requires `F: FnMut() -> T`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let mut x = 1;
+    /// let array: [_; 5] = ArrayTools::generate(|| { x *= 2; x });
+    /// assert_eq!(array, [2, 4, 8, 16, 32]);
+    /// ```
     fn generate<F>(f: F) -> Self
         where Self: ArrayGenerate<F>
     {
         ArrayGenerate::generate(f)
     }
 
+    /// Builds an array by cloning the provided value.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let mut v = Vec::with_capacity(10);
+    /// v.push(42);
+    /// let array: [_; 5] = ArrayTools::repeat(v);
+    /// assert_eq!(array, [[42], [42], [42], [42], [42]]);
+    /// assert_eq!(array[3].capacity(), 1);
+    /// assert_eq!(array[4].capacity(), 10); // The last one is moved
+    /// ```
     fn repeat<T: Clone>(x: T) -> Self
         where Self: ArrayRepeat<T>
     {
         ArrayRepeat::repeat(x)
     }
 
+    /// Builds the array `[0, 1, 2, ..., LEN-1]`.
+    ///
+    /// This requires that `Element = usize`.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let array: [_; 5] = ArrayTools::indices();
+    /// assert_eq!(array, [0, 1, 2, 3, 4]);
+    /// ```
     fn indices() -> Self
         where Self: ArrayIndices
     {
         ArrayIndices::indices()
     }
 
+    /// Builds a new array by applying the provided function to each element of this array.
+    ///
+    /// For `[T; N]`, this generates `[U; N]` and
+    /// - when `N <= 1` this requires `F: FnOnce(T) -> U`
+    /// - when `N > 1` this requires `F: FnMut(T) -> U`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 10, 100].map(|x| x + 10), [11, 20, 110]);
+    /// ```
     fn map<T, F>(self, f: F) -> <Self as ArrayMap<T, F>>::Output
         where Self: ArrayMap<T, F>
     {
         ArrayMap::map(self, f)
     }
 
+    /// Combines two equal-length arrays into an array of tuples.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([10, 20, 30].zip([1.0, 2.0, 3.0]), [(10, 1.0), (20, 2.0), (30, 3.0)]);
+    /// ```
     fn zip<T>(self, other: T) -> <Self as ArrayZip<T>>::Output
         where Self: ArrayZip<T>
     {
         ArrayZip::zip(self, other)
     }
 
+    /// Combines two equal-length arrays using the provided function.
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([10, 20, 30].zip_with([3, 2, 1], std::ops::Add::add), [13, 22, 31]);
+    /// ```
     fn zip_with<T, F>(self, other: T, f: F) -> <Self as ArrayZipWith<T, F>>::Output
         where Self: ArrayZipWith<T, F>
     {
