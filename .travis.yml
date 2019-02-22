@@ -1,0 +1,13 @@
+language: rust
+rust:
+  # Slice patterns were 1.26, but we need NLL slice patterns,
+  # thus our MSRV is 1.31 as the first with the 2018 edition.
+  - 1.31.0
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+

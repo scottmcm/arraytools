@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), no_std)]
 
-use traits::*;
+use self::traits::*;
 
 pub trait ArrayTools: Sized + Sealed {
     /// The type of the elements in this array
@@ -282,7 +282,7 @@ mod impls {
     }
 
     macro_rules! impl_for_size {
-        ($n:literal $fn_trait:ident => $($i:ident)* / $($j:ident)*) => (
+        ($n:expr; $fn_trait:ident => $($i:ident)* / $($j:ident)*) => (
 
             impl<T> Sealed for [T; $n] {}
             impl<T> ArrayTools for [T; $n] {
@@ -390,40 +390,40 @@ mod impls {
         )
     }
 
-    // <https://play.rust-lang.org/?gist=090fb0d6437dd5e5430180fb80b77b76>
-    impl_for_size!(0 FnOnce => /);
-    impl_for_size!(1 FnOnce => a0 / b0);
-    impl_for_size!(2 FnMut => a0 a1 / b0 b1);
-    impl_for_size!(3 FnMut => a0 a1 a2 / b0 b1 b2);
-    impl_for_size!(4 FnMut => a0 a1 a2 a3 / b0 b1 b2 b3);
-    impl_for_size!(5 FnMut => a0 a1 a2 a3 a4 / b0 b1 b2 b3 b4);
-    impl_for_size!(6 FnMut => a0 a1 a2 a3 a4 a5 / b0 b1 b2 b3 b4 b5);
-    impl_for_size!(7 FnMut => a0 a1 a2 a3 a4 a5 a6 / b0 b1 b2 b3 b4 b5 b6);
-    impl_for_size!(8 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 / b0 b1 b2 b3 b4 b5 b6 b7);
-    impl_for_size!(9 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 / b0 b1 b2 b3 b4 b5 b6 b7 b8);
-    impl_for_size!(10 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9);
-    impl_for_size!(11 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10);
-    impl_for_size!(12 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11);
-    impl_for_size!(13 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12);
-    impl_for_size!(14 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13);
-    impl_for_size!(15 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14);
-    impl_for_size!(16 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15);
-    impl_for_size!(17 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16);
-    impl_for_size!(18 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17);
-    impl_for_size!(19 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18);
-    impl_for_size!(20 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19);
-    impl_for_size!(21 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20);
-    impl_for_size!(22 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21);
-    impl_for_size!(23 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22);
-    impl_for_size!(24 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23);
-    impl_for_size!(25 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24);
-    impl_for_size!(26 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25);
-    impl_for_size!(27 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26);
-    impl_for_size!(28 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27);
-    impl_for_size!(29 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28);
-    impl_for_size!(30 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29);
-    impl_for_size!(31 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30);
-    impl_for_size!(32 FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 a31 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31);
+    // <https://play.rust-lang.org/?gist=10a054305dfabf05f0c652e2df75fdcc>
+    impl_for_size!(0; FnOnce => /);
+    impl_for_size!(1; FnOnce => a0 / b0);
+    impl_for_size!(2; FnMut => a0 a1 / b0 b1);
+    impl_for_size!(3; FnMut => a0 a1 a2 / b0 b1 b2);
+    impl_for_size!(4; FnMut => a0 a1 a2 a3 / b0 b1 b2 b3);
+    impl_for_size!(5; FnMut => a0 a1 a2 a3 a4 / b0 b1 b2 b3 b4);
+    impl_for_size!(6; FnMut => a0 a1 a2 a3 a4 a5 / b0 b1 b2 b3 b4 b5);
+    impl_for_size!(7; FnMut => a0 a1 a2 a3 a4 a5 a6 / b0 b1 b2 b3 b4 b5 b6);
+    impl_for_size!(8; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 / b0 b1 b2 b3 b4 b5 b6 b7);
+    impl_for_size!(9; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 / b0 b1 b2 b3 b4 b5 b6 b7 b8);
+    impl_for_size!(10; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9);
+    impl_for_size!(11; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10);
+    impl_for_size!(12; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11);
+    impl_for_size!(13; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12);
+    impl_for_size!(14; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13);
+    impl_for_size!(15; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14);
+    impl_for_size!(16; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15);
+    impl_for_size!(17; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16);
+    impl_for_size!(18; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17);
+    impl_for_size!(19; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18);
+    impl_for_size!(20; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19);
+    impl_for_size!(21; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20);
+    impl_for_size!(22; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21);
+    impl_for_size!(23; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22);
+    impl_for_size!(24; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23);
+    impl_for_size!(25; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24);
+    impl_for_size!(26; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25);
+    impl_for_size!(27; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26);
+    impl_for_size!(28; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27);
+    impl_for_size!(29; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28);
+    impl_for_size!(30; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29);
+    impl_for_size!(31; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30);
+    impl_for_size!(32; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 a31 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31);
 }
 
 #[cfg(test)]
