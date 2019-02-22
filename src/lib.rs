@@ -3,6 +3,16 @@
 
 use self::traits::*;
 
+/// An extension trait for working with fixed-length arrays.
+///
+/// Use it with
+/// ```rust
+/// use arraytools::ArrayTools;
+/// ```
+///
+/// For more details, see the [crate-level documentation](index.html).
+///
+/// (This trait is sealed; you are not allowed to implement it yourself.)
 pub trait ArrayTools: Sized + Sealed {
     /// The type of the elements in this array
     ///
@@ -68,6 +78,8 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Converts a homogeneous tuple into the equivalent array.
     ///
+    /// Type: `(T, T, ..., T) -> [T; N]`
+    ///
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
@@ -76,6 +88,8 @@ pub trait ArrayTools: Sized + Sealed {
     fn from_tuple(tuple: Self::Tuple) -> Self;
 
     /// Converts this array into the equivalent homogeneous tuple.
+    ///
+    /// Type: `[T; N] -> (T, T, ..., T)`
     ///
     /// ```rust
     /// use arraytools::ArrayTools;
@@ -86,7 +100,7 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Builds an array by calling the provided function.
     ///
-    /// For `[T; N]`,
+    /// Type: `F -> [T; N]`
     /// - when `N <= 1` this requires `F: FnOnce() -> T`
     /// - when `N > 1` this requires `F: FnMut() -> T`
     ///
@@ -104,6 +118,8 @@ pub trait ArrayTools: Sized + Sealed {
     }
 
     /// Builds an array by cloning the provided value.
+    ///
+    /// Type: `T -> [T; N]`
     ///
     /// ```rust
     /// use arraytools::ArrayTools;
@@ -123,7 +139,7 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Builds the array `[0, 1, 2, ..., LEN-1]`.
     ///
-    /// This requires that `Element = usize`.
+    /// Type: `() -> [usize; N]`
     ///
     /// ```rust
     /// use arraytools::ArrayTools;
@@ -139,7 +155,7 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Builds a new array by applying the provided function to each element of this array.
     ///
-    /// For `[T; N]`, this generates `[U; N]` and
+    /// Type: `([T; N], F) -> [U; N]`
     /// - when `N <= 1` this requires `F: FnOnce(T) -> U`
     /// - when `N > 1` this requires `F: FnMut(T) -> U`
     ///
@@ -156,6 +172,8 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Combines two equal-length arrays into an array of tuples.
     ///
+    /// Type: `([T; N], [U; N]) -> [(T, U); N]`
+    ///
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
@@ -169,6 +187,10 @@ pub trait ArrayTools: Sized + Sealed {
 
     /// Combines two equal-length arrays using the provided function.
     ///
+    /// Type: `([T; N], [U; N], F) -> [V; N]`
+    /// - when `N <= 1` this requires `F: FnOnce(T, U) -> V`
+    /// - when `N > 1` this requires `F: FnMut(T, U) -> V`
+    ///
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
@@ -180,34 +202,94 @@ pub trait ArrayTools: Sized + Sealed {
         ArrayZipWith::zip_with(self, other, f)
     }
 
+    /// Builds an array of references to the elements of this array.
+    ///
+    /// Type: `&'a [T; N] -> [&'a T; N]`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let array = &[1, 2, 3, 4, 5];
+    /// assert_eq!(array.as_ref_array(), [&1, &2, &3, &4, &5]);
+    /// ```
     fn as_ref_array<'a>(&'a self) -> <&'a Self as ArrayAsRef>::Output
         where &'a Self: ArrayAsRef
     {
         ArrayAsRef::as_ref(self)
     }
 
+    /// Builds an array of mutable references to the elements of this array.
+    ///
+    /// Type: `&'a mut [T; N] -> [&'a mut T; N]`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let array = &mut [1, 2, 3];
+    /// assert_eq!(array.as_ref_array(), [&mut 1, &mut 2, &mut 3]);
+    /// ```
     fn as_mut_array<'a>(&'a mut self) -> <&'a mut Self as ArrayAsMut>::Output
         where &'a mut Self: ArrayAsMut
     {
         ArrayAsMut::as_mut(self)
     }
 
+    /// Appends an item to this array, returning the new array
+    ///
+    /// Type: `([T; N], T) -> [T; N+1]`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 2].push_back(10), [1, 2, 10]);
+    /// ```
     fn push_back<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
         where Self: ArrayPush<U>
     {
         ArrayPush::push_back(self, item)
     }
+
+    /// Prepends an item to this array, returning the new array
+    ///
+    /// Type: `([T; N], T) -> [T; N+1]`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 2].push_front(10), [10, 1, 2]);
+    /// ```
     fn push_front<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
         where Self: ArrayPush<U>
     {
         ArrayPush::push_front(self, item)
     }
 
+    /// Splits the last item off from this array, returning a tuple of
+    /// an array of the other elements and the split-off item.
+    ///
+    /// Type: `[T; N+1] -> ([T; N], T)`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 2, 3].pop_back(), ([1, 2], 3));
+    /// ```
     fn pop_back<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
         where Self: ArrayPop<U>
     {
         ArrayPop::pop_back(self)
     }
+
+    /// Splits the first item off from this array, returning a tuple of
+    /// an array of the other elements and the split-off item.
+    ///
+    /// Type: `[T; N+1] -> ([T; N], T)`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!([1, 2, 3].pop_front(), ([2, 3], 1));
+    /// ```
     fn pop_front<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
         where Self: ArrayPop<U>
     {
