@@ -175,7 +175,7 @@ pub trait ArrayTools: Sized + Sealed {
     /// assert_eq!([10, 20, 30].zip_with([3, 2, 1], std::ops::Add::add), [13, 22, 31]);
     /// ```
     fn zip_with<T, F>(self, other: T, f: F) -> <Self as ArrayZipWith<T, F>>::Output
-        where Self: ArrayZipWith<T, F>
+        where Self: ArrayZip<T>
     {
         ArrayZipWith::zip_with(self, other, f)
     }
