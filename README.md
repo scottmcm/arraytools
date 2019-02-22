@@ -2,8 +2,8 @@
 
 A variety of helpful methods for working with fixed-size arrays.
 
-![travis build status](https://travis-ci.com/scottmcm/arraytools.svg)
-![cargo latest version](http://meritbadge.herokuapp.com/arraytools)
+[![travis build status](https://travis-ci.com/scottmcm/arraytools.svg)](https://travis-ci.com/scottmcm/arraytools)
+[![crates.io latest version](http://meritbadge.herokuapp.com/arraytools)](https://crates.io/crates/arraytools)
 
 ## Usage
 
