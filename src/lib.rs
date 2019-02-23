@@ -307,6 +307,7 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 2].push_back(10), [1, 2, 10]);
     /// ```
+    #[must_use = "this returns the new array; it doesn't update the existing one"]
     fn push_back<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
         where Self: ArrayPush<U>
     {
@@ -322,6 +323,7 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 2].push_front(10), [10, 1, 2]);
     /// ```
+    #[must_use = "this returns the new array; it doesn't update the existing one"]
     fn push_front<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
         where Self: ArrayPush<U>
     {
@@ -338,6 +340,7 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 2, 3].pop_back(), ([1, 2], 3));
     /// ```
+    #[must_use = "this returns the new array; it doesn't update the existing one"]
     fn pop_back<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
         where Self: ArrayPop<U>
     {
@@ -354,6 +357,7 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 2, 3].pop_front(), ([2, 3], 1));
     /// ```
+    #[must_use = "this returns the new array; it doesn't update the existing one"]
     fn pop_front<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
         where Self: ArrayPop<U>
     {
