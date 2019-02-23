@@ -178,6 +178,29 @@ pub trait ArrayTools: Sized + Sealed {
         ArrayRepeat::repeat(x)
     }
 
+    /// Builds an array containing a prefix of the provided iterator,
+    /// or returns `None` if it didn't contain sufficient items.
+    ///
+    /// Type: `impl IntoIterator<Item = T> -> Option<[T; N]>`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// assert_eq!(<[i16; 4]>::from_iter(1..), Some([1, 2, 3, 4]));
+    ///
+    /// assert_eq!(<[_; 4]>::from_iter(1..4), None);
+    /// assert_eq!(<[_; 4]>::from_iter(1..5), Some([1, 2, 3, 4]));
+    /// assert_eq!(<[_; 4]>::from_iter(1..6), Some([1, 2, 3, 4]));
+    ///
+    /// assert_eq!(<[u8; 1]>::from_iter(Some(1)), Some([1]));
+    /// assert_eq!(<[u8; 1]>::from_iter(None), None);
+    /// ```
+    fn from_iter<I: IntoIterator>(it: I) -> Option<Self>
+        where Self: ArrayFromIter<I::IntoIter>
+    {
+        ArrayFromIter::from_iter(it.into_iter())
+    }
+
     /// Builds the array `[0, 1, 2, ..., LEN-1]`.
     ///
     /// Type: `() -> [usize; N]`
@@ -349,6 +372,10 @@ mod traits {
         fn repeat(x: T) -> Self;
     }
 
+    pub trait ArrayFromIter<I> {
+        fn from_iter(it: I) -> Option<Self> where Self: Sized;
+    }
+
     pub trait ArrayIndices {
         fn indices() -> Self;
     }
@@ -436,6 +463,13 @@ mod impls {
             {
                 fn repeat(x: T) -> Self {
                     array_by_cloning!(x: $($i)*)
+                }
+            }
+            impl<T, I> ArrayFromIter<I> for [T; $n]
+                where I: Iterator<Item = T>
+            {
+                fn from_iter(mut it: I) -> Option<Self> {
+                    Some([$(replace_ident!($i => it.next()?),)*])
                 }
             }
             impl ArrayIndices for [usize; $n] {
@@ -589,5 +623,12 @@ mod tests {
 
         let sums = [1, 2, 3].zip_with([30, 20, 10], std::ops::Add::add);
         assert_eq!(sums, [31, 22, 13]);
+    }
+
+    #[test]
+    fn from_iter_is_not_ambiguous_with_std() {
+        #[allow(unused_imports)]
+        use std::iter::FromIterator;
+        <[i16; 5]>::from_iter(1..);
     }
 }
