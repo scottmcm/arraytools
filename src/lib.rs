@@ -41,6 +41,23 @@
 //! assert_eq!(array, [1, 1, 2, 3, 5]);
 //! ```
 //!
+//! Like `Option`, most combinators here take `self`.  To not move something,
+//! you can use [`.as_ref_array()`] or [`.as_mut_array()`]:
+//!
+//! [`.as_ref_array()`]: trait.ArrayTools.html#method.as_ref_array
+//! [`.as_mut_array()`]: trait.ArrayTools.html#method.as_mut_array
+//!
+//! ```rust
+//! use arraytools::ArrayTools;
+//!
+//! struct SevenStrings([String; 7]);
+//! impl SevenStrings {
+//!     fn push_str(&mut self, s: &str) {
+//!         self.0.as_mut_array().for_each(|x: &mut String| x.push_str(s));
+//!     }
+//! }
+//! ```
+//!
 
 use self::traits::*;
 
@@ -228,10 +245,30 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 10, 100].map(|x| x + 10), [11, 20, 110]);
     /// ```
-    fn map<T, F>(self, f: F) -> <Self as ArrayMap<T, F>>::Output
-        where Self: ArrayMap<T, F>
+    #[must_use = "if you don't need the result, use `for_each`"]
+    fn map<F>(self, f: F) -> <Self as ArrayMap<F>>::Output
+        where Self: ArrayMap<F>
     {
         ArrayMap::map(self, f)
+    }
+
+    /// Runs the provided function on each element of this array.
+    ///
+    /// Type: `([T; N], F) -> ()`
+    /// - when `N <= 1` this requires `F: FnOnce(T) -> ()`
+    /// - when `N > 1` this requires `F: FnMut(T) -> ()`
+    ///
+    /// ```rust
+    /// use arraytools::ArrayTools;
+    ///
+    /// let mut array = [1, 10, 100];
+    /// array.as_mut_array().for_each(|x: &mut u8| *x += 10);
+    /// assert_eq!(array, [11, 20, 110]);
+    /// ```
+    fn for_each<F>(self, f: F)
+        where Self: ArrayMap<F, OutputElement = ()>
+    {
+        ArrayMap::map(self, f);
     }
 
     /// Combines two equal-length arrays into an array of tuples.
@@ -384,8 +421,9 @@ mod traits {
         fn indices() -> Self;
     }
 
-    pub trait ArrayMap<T, F> {
+    pub trait ArrayMap<F> {
         type Output;
+        type OutputElement;
         fn map(array: Self, f: F) -> Self::Output;
     }
 
@@ -482,10 +520,11 @@ mod impls {
                     ArrayTools::generate(|| { let t = i; i += 1; t })
                 }
             }
-            impl<T, U, F> ArrayMap<U, F> for [T; $n]
+            impl<T, U, F> ArrayMap<F> for [T; $n]
                 where F: $fn_trait(T) -> U
             {
                 type Output = [U; $n];
+                type OutputElement = U;
                 fn map(array: Self, mut f: F) -> Self::Output {
                     let [$($i,)*] = array;
                     [$(f($i),)*]
