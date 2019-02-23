@@ -313,8 +313,8 @@ pub trait ArrayTools: Sized + Sealed {
     /// let array = &[1, 2, 3, 4, 5];
     /// assert_eq!(array.as_ref_array(), [&1, &2, &3, &4, &5]);
     /// ```
-    fn as_ref_array<'a>(&'a self) -> <&'a Self as ArrayAsRef>::Output
-        where &'a Self: ArrayAsRef
+    fn as_ref_array<'a>(&'a self) -> <Self as ArrayAsRef<'a>>::Output
+        where Self: ArrayAsRef<'a>
     {
         ArrayAsRef::as_ref(self)
     }
@@ -329,8 +329,8 @@ pub trait ArrayTools: Sized + Sealed {
     /// let array = &mut [1, 2, 3];
     /// assert_eq!(array.as_ref_array(), [&mut 1, &mut 2, &mut 3]);
     /// ```
-    fn as_mut_array<'a>(&'a mut self) -> <&'a mut Self as ArrayAsMut>::Output
-        where &'a mut Self: ArrayAsMut
+    fn as_mut_array<'a>(&'a mut self) -> <Self as ArrayAsMut<'a>>::Output
+        where Self: ArrayAsMut<'a>
     {
         ArrayAsMut::as_mut(self)
     }
@@ -437,14 +437,14 @@ mod traits {
         fn zip_with(array: Self, other: T, f: F) -> Self::Output;
     }
 
-    pub trait ArrayAsRef {
-        type Output;
-        fn as_ref(array: Self) -> Self::Output;
+    pub trait ArrayAsRef<'a> {
+        type Output: 'a;
+        fn as_ref(array: &'a Self) -> Self::Output;
     }
 
-    pub trait ArrayAsMut {
-        type Output;
-        fn as_mut(array: Self) -> Self::Output;
+    pub trait ArrayAsMut<'a> {
+        type Output: 'a;
+        fn as_mut(array: &'a mut Self) -> Self::Output;
     }
 
     pub trait ArrayPush<T> {
@@ -548,18 +548,18 @@ mod impls {
                     [$(f($i,$j),)*]
                 }
             }
-            impl<'a, T> ArrayAsRef for &'a [T; $n]
+            impl<'a, T: 'a> ArrayAsRef<'a> for [T; $n]
             {
                 type Output = [&'a T; $n];
-                fn as_ref(array: Self) -> Self::Output {
+                fn as_ref(array: &'a Self) -> Self::Output {
                     let [$($i,)*] = array;
                     [$($i,)*]
                 }
             }
-            impl<'a, T> ArrayAsMut for &'a mut [T; $n]
+            impl<'a, T: 'a> ArrayAsMut<'a> for [T; $n]
             {
                 type Output = [&'a mut T; $n];
-                fn as_mut(array: Self) -> Self::Output {
+                fn as_mut(array: &'a mut Self) -> Self::Output {
                     let [$($i,)*] = array;
                     [$($i,)*]
                 }
