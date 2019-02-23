@@ -47,7 +47,7 @@ How to use with cargo:
 
 ```toml
 [dependencies]
-arraytools = "0.1"
+arraytools = "0.2"
 ```
 
 How to use in your 2018-edition crate:
