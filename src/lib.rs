@@ -282,12 +282,12 @@ pub trait ArrayTools: Sized + Sealed {
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
-    /// assert_eq!([1, 2].push_back(10), [1, 2, 10]);
+    /// assert_eq!([1, 2].affix_last(10), [1, 2, 10]);
     /// ```
-    fn push_back<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
-        where Self: ArrayPush<U>
+    fn affix_last<U>(self, item: U) -> <Self as ArrayAffix<U>>::Output
+        where Self: ArrayAffix<U>
     {
-        ArrayPush::push_back(self, item)
+        ArrayAffix::affix_last(self, item)
     }
 
     /// Prepends an item to this array, returning the new array
@@ -297,44 +297,44 @@ pub trait ArrayTools: Sized + Sealed {
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
-    /// assert_eq!([1, 2].push_front(10), [10, 1, 2]);
+    /// assert_eq!([1, 2].affix_first(10), [10, 1, 2]);
     /// ```
-    fn push_front<U>(self, item: U) -> <Self as ArrayPush<U>>::Output
-        where Self: ArrayPush<U>
+    fn affix_first<U>(self, item: U) -> <Self as ArrayAffix<U>>::Output
+        where Self: ArrayAffix<U>
     {
-        ArrayPush::push_front(self, item)
+        ArrayAffix::affix_first(self, item)
     }
 
     /// Splits the last item off from this array, returning a tuple of
     /// an array of the other elements and the split-off item.
     ///
-    /// Type: `[T; N+1] -> ([T; N], T)`
+    /// Type: `[T; N+1] -> (T, [T; N])`
     ///
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
-    /// assert_eq!([1, 2, 3].pop_back(), ([1, 2], 3));
+    /// assert_eq!([1, 2, 3].split_last(), (3, [1, 2]));
     /// ```
-    fn pop_back<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
-        where Self: ArrayPop<U>
+    fn split_last<U>(self) -> (U, <Self as ArraySplit<U>>::Output)
+        where Self: ArraySplit<U>
     {
-        ArrayPop::pop_back(self)
+        ArraySplit::split_last(self)
     }
 
     /// Splits the first item off from this array, returning a tuple of
-    /// an array of the other elements and the split-off item.
+    /// the split-off item and an array of the other elements.
     ///
-    /// Type: `[T; N+1] -> ([T; N], T)`
+    /// Type: `[T; N+1] -> (T, [T; N])`
     ///
     /// ```rust
     /// use arraytools::ArrayTools;
     ///
-    /// assert_eq!([1, 2, 3].pop_front(), ([2, 3], 1));
+    /// assert_eq!([1, 2, 3].split_first(), (1, [2, 3]));
     /// ```
-    fn pop_front<U>(self) -> (<Self as ArrayPop<U>>::Output, U)
-        where Self: ArrayPop<U>
+    fn split_first<U>(self) -> (U, <Self as ArraySplit<U>>::Output)
+        where Self: ArraySplit<U>
     {
-        ArrayPop::pop_front(self)
+        ArraySplit::split_first(self)
     }
 }
 
@@ -378,16 +378,16 @@ mod traits {
         fn as_mut(array: Self) -> Self::Output;
     }
 
-    pub trait ArrayPush<T> {
+    pub trait ArrayAffix<T> {
         type Output;
-        fn push_back(array: Self, item: T) -> Self::Output;
-        fn push_front(array: Self, item: T) -> Self::Output;
+        fn affix_last(array: Self, item: T) -> Self::Output;
+        fn affix_first(array: Self, item: T) -> Self::Output;
     }
 
-    pub trait ArrayPop<T> {
+    pub trait ArraySplit<T> {
         type Output;
-        fn pop_back(array: Self) -> (Self::Output, T);
-        fn pop_front(array: Self) -> (Self::Output, T);
+        fn split_last(array: Self) -> (T, Self::Output);
+        fn split_first(array: Self) -> (T, Self::Output);
     }
 }
 
@@ -487,26 +487,26 @@ mod impls {
                     [$($i,)*]
                 }
             }
-            impl<T> ArrayPush<T> for [T; $n] {
+            impl<T> ArrayAffix<T> for [T; $n] {
                 type Output = [T; $n+1];
-                fn push_back(array: Self, item: T) -> Self::Output {
+                fn affix_last(array: Self, item: T) -> Self::Output {
                     let [$($i,)*] = array;
                     [$($i,)* item]
                 }
-                fn push_front(array: Self, item: T) -> Self::Output {
+                fn affix_first(array: Self, item: T) -> Self::Output {
                     let [$($i,)*] = array;
                     [item, $($i,)*]
                 }
             }
-            impl<T> ArrayPop<T> for [T; $n+1] {
+            impl<T> ArraySplit<T> for [T; $n+1] {
                 type Output = [T; $n];
-                fn pop_back(array: Self) -> (Self::Output, T) {
+                fn split_last(array: Self) -> (T, Self::Output) {
                     let [$($i,)* item] = array;
-                    ([$($i,)*], item)
+                    (item, [$($i,)*])
                 }
-                fn pop_front(array: Self) -> (Self::Output, T) {
+                fn split_first(array: Self) -> (T, Self::Output) {
                     let [item, $($i,)*] = array;
-                    ([$($i,)*], item)
+                    (item, [$($i,)*])
                 }
             }
 
@@ -567,12 +567,12 @@ mod tests {
         assert_eq!(a, [3.0]);
 
         let a0: [u8; 0] = [];
-        let a1 = a0.push_back(Default::default());
+        let a1 = a0.affix_last(Default::default());
         assert_eq!(a1, [0]);
-        let a2 = a1.push_back(2);
+        let a2 = a1.affix_last(2);
         assert_eq!(a2, [0, 2]);
-        let b1 = a2.pop_back();
-        assert_eq!(b1, ([0], 2));
+        let b1 = a2.split_last();
+        assert_eq!(b1, (2, [0]));
 
         let iota: [_; 10] = ArrayTools::indices();
         assert_eq!(iota, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
