@@ -12,8 +12,12 @@ description = "A variety of helpful methods for working with fixed-size arrays."
 keywords = ["array", "no_std"]
 categories = ["no-std", "rust-patterns"]
 
+[features]
+#default = ["const-generics"]
+const-generics = ["array-init"]
+
 [dependencies]
-# none!
+array-init = {version = "2.0.0", optional=true}
 
 [badges]
 travis-ci = { repository = "scottmcm/arraytools" }

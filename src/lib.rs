@@ -33,12 +33,15 @@
 //! Conversion to and from homogeneous tuples:
 //!
 //! ```rust
+//! #[cfg(not(feature = "const-generics"))]
+//! # {
 //! use arraytools::ArrayTools;
 //!
 //! let mut array = [2, 3, 5, 7, 11];
 //! assert_eq!(array.into_tuple(), (2, 3, 5, 7, 11));
 //! array = ArrayTools::from_tuple((1, 1, 2, 3, 5));
 //! assert_eq!(array, [1, 1, 2, 3, 5]);
+//! # }
 //! ```
 //!
 //! Like `Option`, most combinators here take `self`.  To not move something,
@@ -58,6 +61,7 @@
 //! }
 //! ```
 //!
+
 
 use self::traits::*;
 
@@ -122,18 +126,6 @@ pub trait ArrayTools: Sized + Sealed {
     /// ```
     fn as_mut_slice(&mut self) -> &mut [Self::Element];
 
-    /// The homogeneous tuple type equivalent to this array type.
-    ///
-    /// ```rust
-    /// # type T = usize;
-    /// use arraytools::ArrayTools;
-    ///
-    /// # fn _foo() where
-    /// [T; 4]: ArrayTools<Tuple = (T, T, T, T)>
-    /// # {}
-    /// ```
-    type Tuple;
-
     /// Converts a homogeneous tuple into the equivalent array.
     ///
     /// Type: `(T, T, ..., T) -> [T; N]`
@@ -143,7 +135,9 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!(<[_; 3]>::from_tuple((1, 2, 3)), [1, 2, 3]);
     /// ```
-    fn from_tuple(tuple: Self::Tuple) -> Self;
+    fn from_tuple(tuple: <Self as ArrayTuple>::Tuple) -> Self where Self: ArrayTuple {
+        ArrayTuple::from_tuple(tuple)
+    }
 
     /// Converts this array into the equivalent homogeneous tuple.
     ///
@@ -154,7 +148,9 @@ pub trait ArrayTools: Sized + Sealed {
     ///
     /// assert_eq!([1, 2, 3].into_tuple(), (1, 2, 3));
     /// ```
-    fn into_tuple(self) -> Self::Tuple;
+    fn into_tuple(self) -> <Self as ArrayTuple>::Tuple where Self: ArrayTuple {
+        ArrayTuple::into_tuple(self)
+    }
 
     /// Builds an array by calling the provided function.
     ///
@@ -187,7 +183,6 @@ pub trait ArrayTools: Sized + Sealed {
     /// let array: [_; 5] = ArrayTools::repeat(v);
     /// assert_eq!(array, [[42], [42], [42], [42], [42]]);
     /// assert_eq!(array[3].capacity(), 1);
-    /// assert_eq!(array[4].capacity(), 10); // The last one is moved
     /// ```
     fn repeat<T: Clone>(x: T) -> Self
         where Self: ArrayRepeat<T>
@@ -405,6 +400,14 @@ pub trait ArrayTools: Sized + Sealed {
 mod traits {
     pub trait Sealed {}
 
+    pub trait ArrayTuple {
+        type Tuple;
+
+        fn from_tuple(tuple: Self::Tuple) -> Self;
+
+        fn into_tuple(self) -> Self::Tuple;
+    }
+
     pub trait ArrayGenerate<F> {
         fn generate(f: F) -> Self;
     }
@@ -468,21 +471,15 @@ mod impls {
         ($i:ident => $($j:tt)*) => ($($j)*)
     }
 
+    #[cfg(not(feature = "const-generics"))]
     macro_rules! array_by_cloning {
-        ($x:ident:) => ( [] );
-        ($x:ident: $first:ident $($i:ident)*) => ( [$(replace_ident!($i => $x.clone()),)* $x] );
+        (:) => ( [] );
+        ($x:ident: $($i:ident)*) => ( [$(replace_ident!($i => $x.clone()),)*] );
     }
 
-    macro_rules! impl_for_size {
-        ($n:expr; $fn_trait:ident => $($i:ident)* / $($j:ident)*) => (
-
-            impl<T> Sealed for [T; $n] {}
-            impl<T> ArrayTools for [T; $n] {
-                type Element = T;
-                const LEN: usize = $n;
-                fn as_slice(&self) -> &[Self::Element] { self }
-                fn as_mut_slice(&mut self) -> &mut [Self::Element] { self }
-
+    macro_rules! impl_tuple {
+        ($n:expr; $fn_trait:ident => $($i:ident)* / $($j:ident)*) => {
+            impl<T> ArrayTuple for [T; $n] {
                 type Tuple = ($(replace_ident!($i => T),)*);
                 fn from_tuple(tuple: Self::Tuple) -> Self {
                     let ($($i,)*) = tuple;
@@ -493,6 +490,50 @@ mod impls {
                     ($($i,)*)
                 }
             }
+        };
+    }
+
+    macro_rules! impl_push_pop {
+        ($n:expr; $fn_trait:ident => $($i:ident)* / $($j:ident)*) => {
+            impl<T> ArrayPush<T> for [T; $n] {
+                type Output = [T; $n+1];
+                fn push_back(array: Self, item: T) -> Self::Output {
+                    let [$($i,)*] = array;
+                    [$($i,)* item]
+                }
+                fn push_front(array: Self, item: T) -> Self::Output {
+                    let [$($i,)*] = array;
+                    [item, $($i,)*]
+                }
+            }
+            impl<T> ArrayPop<T> for [T; $n+1] {
+                type Output = [T; $n];
+                fn pop_back(array: Self) -> (Self::Output, T) {
+                    let [$($i,)* item] = array;
+                    ([$($i,)*], item)
+                }
+                fn pop_front(array: Self) -> (Self::Output, T) {
+                    let [item, $($i,)*] = array;
+                    ([$($i,)*], item)
+                }
+            }
+        };
+    }
+
+    #[cfg(not(feature = "const-generics"))]
+    macro_rules! impl_for_size {
+        ($n:expr; $fn_trait:ident => $($i:ident)* / $($j:ident)*) => (
+
+            impl<T> Sealed for [T; $n] {}
+            impl<T> ArrayTools for [T; $n] {
+                type Element = T;
+                const LEN: usize = $n;
+                fn as_slice(&self) -> &[Self::Element] { self }
+                fn as_mut_slice(&mut self) -> &mut [Self::Element] { self }
+            }
+
+            impl_tuple!($n; $fn_trait => $($i)* / $($j)*);
+
             impl<T, F> ArrayGenerate<F> for [T; $n]
                 where F: $fn_trait() -> T
             {
@@ -564,66 +605,176 @@ mod impls {
                     [$($i,)*]
                 }
             }
-            impl<T> ArrayPush<T> for [T; $n] {
-                type Output = [T; $n+1];
-                fn push_back(array: Self, item: T) -> Self::Output {
-                    let [$($i,)*] = array;
-                    [$($i,)* item]
-                }
-                fn push_front(array: Self, item: T) -> Self::Output {
-                    let [$($i,)*] = array;
-                    [item, $($i,)*]
-                }
-            }
-            impl<T> ArrayPop<T> for [T; $n+1] {
-                type Output = [T; $n];
-                fn pop_back(array: Self) -> (Self::Output, T) {
-                    let [$($i,)* item] = array;
-                    ([$($i,)*], item)
-                }
-                fn pop_front(array: Self) -> (Self::Output, T) {
-                    let [item, $($i,)*] = array;
-                    ([$($i,)*], item)
-                }
-            }
 
+            impl_push_pop!($n; $fn_trait => $($i)* / $($j)*);
         )
     }
 
-    // <https://play.rust-lang.org/?gist=10a054305dfabf05f0c652e2df75fdcc>
-    impl_for_size!(0; FnOnce => /);
-    impl_for_size!(1; FnOnce => a0 / b0);
-    impl_for_size!(2; FnMut => a0 a1 / b0 b1);
-    impl_for_size!(3; FnMut => a0 a1 a2 / b0 b1 b2);
-    impl_for_size!(4; FnMut => a0 a1 a2 a3 / b0 b1 b2 b3);
-    impl_for_size!(5; FnMut => a0 a1 a2 a3 a4 / b0 b1 b2 b3 b4);
-    impl_for_size!(6; FnMut => a0 a1 a2 a3 a4 a5 / b0 b1 b2 b3 b4 b5);
-    impl_for_size!(7; FnMut => a0 a1 a2 a3 a4 a5 a6 / b0 b1 b2 b3 b4 b5 b6);
-    impl_for_size!(8; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 / b0 b1 b2 b3 b4 b5 b6 b7);
-    impl_for_size!(9; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 / b0 b1 b2 b3 b4 b5 b6 b7 b8);
-    impl_for_size!(10; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9);
-    impl_for_size!(11; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10);
-    impl_for_size!(12; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11);
-    impl_for_size!(13; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12);
-    impl_for_size!(14; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13);
-    impl_for_size!(15; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14);
-    impl_for_size!(16; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15);
-    impl_for_size!(17; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16);
-    impl_for_size!(18; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17);
-    impl_for_size!(19; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18);
-    impl_for_size!(20; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19);
-    impl_for_size!(21; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20);
-    impl_for_size!(22; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21);
-    impl_for_size!(23; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22);
-    impl_for_size!(24; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23);
-    impl_for_size!(25; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24);
-    impl_for_size!(26; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25);
-    impl_for_size!(27; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26);
-    impl_for_size!(28; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27);
-    impl_for_size!(29; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28);
-    impl_for_size!(30; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29);
-    impl_for_size!(31; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30);
-    impl_for_size!(32; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 a31 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31);
+    macro_rules! implement {
+        ($macro_name: ident) => {
+            // <https://play.rust-lang.org/?gist=10a054305dfabf05f0c652e2df75fdcc>
+            $macro_name!(0; FnOnce => /);
+            $macro_name!(1; FnOnce => a0 / b0);
+            $macro_name!(2; FnMut => a0 a1 / b0 b1);
+            $macro_name!(3; FnMut => a0 a1 a2 / b0 b1 b2);
+            $macro_name!(4; FnMut => a0 a1 a2 a3 / b0 b1 b2 b3);
+            $macro_name!(5; FnMut => a0 a1 a2 a3 a4 / b0 b1 b2 b3 b4);
+            $macro_name!(6; FnMut => a0 a1 a2 a3 a4 a5 / b0 b1 b2 b3 b4 b5);
+            $macro_name!(7; FnMut => a0 a1 a2 a3 a4 a5 a6 / b0 b1 b2 b3 b4 b5 b6);
+            $macro_name!(8; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 / b0 b1 b2 b3 b4 b5 b6 b7);
+            $macro_name!(9; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 / b0 b1 b2 b3 b4 b5 b6 b7 b8);
+            $macro_name!(10; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9);
+            $macro_name!(11; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10);
+            $macro_name!(12; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11);
+            $macro_name!(13; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12);
+            $macro_name!(14; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13);
+            $macro_name!(15; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14);
+            $macro_name!(16; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15);
+            $macro_name!(17; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16);
+            $macro_name!(18; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17);
+            $macro_name!(19; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18);
+            $macro_name!(20; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19);
+            $macro_name!(21; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20);
+            $macro_name!(22; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21);
+            $macro_name!(23; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22);
+            $macro_name!(24; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23);
+            $macro_name!(25; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24);
+            $macro_name!(26; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25);
+            $macro_name!(27; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26);
+            $macro_name!(28; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27);
+            $macro_name!(29; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28);
+            $macro_name!(30; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29);
+            $macro_name!(31; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30);
+            $macro_name!(32; FnMut => a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24 a25 a26 a27 a28 a29 a30 a31 / b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31);
+        };
+    }
+
+    #[cfg(not(feature = "const-generics"))]
+    mod normal {
+        use super::*;
+
+        implement!(impl_for_size);
+    }
+    #[cfg(not(feature = "const-generics"))]
+    use normal::*;
+
+    #[cfg(feature = "const-generics")]
+    mod const_generics {
+        use super::*;
+
+        impl<T, const N: usize> Sealed for [T; N] {}
+        impl<T, const N: usize> ArrayTools for [T; N] {
+            type Element = T;
+            const LEN: usize = N;
+
+            fn as_slice(&self) -> &[Self::Element] { self }
+            fn as_mut_slice(&mut self) -> &mut [Self::Element] { self }
+        }
+
+        impl<T, F, const N: usize> ArrayGenerate<F> for [T; N]
+            where F: FnMut() -> T {
+            fn generate(mut f: F) -> Self {
+                array_init::array_init(|_| f())
+            }
+        }
+
+        impl<T, const N: usize> ArrayRepeat<T> for [T; N]
+            where T: Clone
+        {
+            fn repeat(x: T) -> Self {
+                array_init::array_init(|_| x.clone())
+            }
+        }
+
+        impl<T, I, const N: usize> ArrayFromIter<I> for [T; N]
+            where I: Iterator<Item = T>
+        {
+            fn from_iter(mut it: I) -> Option<Self> {
+                array_init::from_iter(it)
+            }
+        }
+
+        impl<const N: usize> ArrayIndices for [usize; N] {
+            fn indices() -> Self {
+                let mut i = 0;
+                ArrayTools::generate(|| { let t = i; i += 1; t })
+            }
+        }
+
+        const EQUAL_SIZE_ERROR_MESSAGE_ASSERTION: &str =
+            "can't fail because the sizes of input and output are equal as ensured by the type system.";
+
+        impl<T, U, F, const N: usize> ArrayMap<F> for [T; N]
+            where F: FnMut(T) -> U {
+
+            type Output = [U; N];
+            type OutputElement = U;
+
+            fn map(array: Self, mut f: F) -> Self::Output {
+                let mut items = core::array::IntoIter::new(array);
+                array_init::array_init(|_| f(items.next()
+                    .expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION))
+                )
+            }
+        }
+
+        impl<T, U, const N: usize> ArrayZip<[U; N]> for [T; N] {
+            type Output = [(T, U); N];
+            fn zip(array: Self, other: [U; N]) -> Self::Output {
+                let mut items = core::array::IntoIter::new(array);
+                let mut other_items = core::array::IntoIter::new(other);
+
+
+                array_init::array_init(|_|
+                    (
+                        items.next().expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION),
+                        other_items.next().expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION),
+                    )
+                )
+            }
+        }
+
+        impl<T, U, V, F, const N: usize> ArrayZipWith<[U; N], F> for [T; N]
+            where F: FnMut(T, U) -> V
+        {
+            type Output = [V; N];
+            fn zip_with(array: Self, other: [U; N], mut f: F) -> Self::Output {
+                let mut items = core::array::IntoIter::new(array);
+                let mut other_items = core::array::IntoIter::new(other);
+
+
+                array_init::array_init(|_|
+                    f(
+                        items.next().expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION),
+                        other_items.next().expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION),
+                    )
+                )
+            }
+        }
+
+        impl<'a, T: 'a, const N: usize> ArrayAsRef<'a> for [T; N] {
+            type Output = [&'a T; N];
+
+            fn as_ref(array: &'a Self) -> Self::Output {
+                array_init::array_init(|i| &array[i])
+            }
+        }
+
+        impl<'a, T: 'a, const N: usize> ArrayAsMut<'a> for [T; N] {
+            type Output = [&'a mut T; N];
+
+            fn as_mut(array: &'a mut Self) -> Self::Output {
+                let mut items = array.iter_mut();
+
+                array_init::array_init(|i| items.next().expect(EQUAL_SIZE_ERROR_MESSAGE_ASSERTION))
+            }
+        }
+
+        implement!(impl_tuple);
+        implement!(impl_push_pop);
+    }
+    #[cfg(feature = "const-generics")]
+    use const_generics::*;
 }
 
 #[cfg(test)]
@@ -662,7 +813,7 @@ mod tests {
         assert_eq!(a[2], [1]);
         assert_eq!(a[0].capacity(), 1);
         assert_eq!(a[1].capacity(), 1);
-        assert_eq!(a[2].capacity(), 111);
+        assert_eq!(a[2].capacity(), 1);
 
         let sums = [1, 2, 3].zip_with([30, 20, 10], std::ops::Add::add);
         assert_eq!(sums, [31, 22, 13]);
