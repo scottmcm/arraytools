@@ -13,7 +13,6 @@ keywords = ["array", "no_std"]
 categories = ["no-std", "rust-patterns"]
 
 [features]
-#default = ["const-generics"]
 const-generics = ["array-init"]
 
 [dependencies]
