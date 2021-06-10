@@ -61,6 +61,32 @@
 //! }
 //! ```
 //!
+//!
+//! ## Const generics
+//!
+//! Some features in this crate also work for `const-generic` arrays. For this, you will need at least
+//! rust version **1.51**. To enable this, use the `const-generics` feature. The api is exactly the same except:
+//!
+//! * `push_front`, `push_back`, `pop_front`, `pop_back`, `to_tuple` and `from_tuple` can only be used on arrays of which the length is *not* specified by const generics and are shorter than 32 elements
+//! * methods on arrays which take closures allways take `FnMut`, where in the version without `const-generics` they could take `FnOnce` when the size was known to be 1 or 0.
+//!
+//! Using the `const-generics` feature, the following code will work:
+//!
+//! ```rust
+//! # #[cfg(feature = "const-generics")]
+//! # {
+//! use arraytools::ArrayTools;
+//!
+//! fn add_ten<const N: usize>(arr: [usize; N]) -> [usize; N] {
+//!     arr.map(|i| i + 10)
+//! }
+//!
+//! assert_eq!(add_ten([1, 2, 3]), [11, 12, 13]);
+//! assert_eq!(add_ten([1, 2, 3, 4, 5]), [11, 12, 13, 14, 15]);
+//! assert_eq!(add_ten([1, 2, 3, 4, 5, 6, 7]), [11, 12, 13, 14, 15, 16, 17]);
+//! # }
+//! ```
+//!
 
 
 use self::traits::*;
